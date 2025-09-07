@@ -1,0 +1,1 @@
+python3 $(dirname $0)/shell.py --vfs=~/shellemu/vfs.xml --script=~/shellemu/shellscript

@@ -1,0 +1,1 @@
+python3 $(dirname $0)/shell.py --vfs=$(dirname $0)/defaultvfs.xml --script=$(dirname $0)/scripts/default

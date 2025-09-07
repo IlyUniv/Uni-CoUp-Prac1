@@ -1,0 +1,10 @@
+# THIS IS A TEST SCRIPT!
+# and this is a comment
+cd ~/git
+ls kisscm
+
+exit
+
+# ls another dir
+cd ../1\ dir
+ls
