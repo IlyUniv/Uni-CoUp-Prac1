@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<rootdir>
+    <file name="file1.txt">this is a first file</file>
+    <file name="secondfile.txt">and this is the second one</file>
+    <file name="thridone.txt">and just in case, here's a third file</file>
+</rootdir>

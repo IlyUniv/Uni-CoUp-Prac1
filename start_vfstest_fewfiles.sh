@@ -1,0 +1,1 @@
+python3 $(dirname $0)/shell.py --vfs=$(dirname $0)/vfstest/1_fewfiles.xml

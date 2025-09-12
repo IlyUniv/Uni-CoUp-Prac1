@@ -1,3 +1,26 @@
 # list all files in vfs root directory
-
 ls
+
+# cd to 'stuff'
+cd stuff
+
+# list all files in 'stuff/project'
+ls project
+
+# this will return an error
+ls "project
+
+# go to dir1 from root
+cd /dir1
+
+# list all files here
+ls
+
+# go up one directory
+cd ..
+
+# exit the start script
+exit
+
+# this should not run, because we already exited
+cd /stuff/project

@@ -1,1 +1,19 @@
-<!-- This is a placeholder file -->
+<?xml version='1.0'?>
+
+<rootdir>
+    <dir name="dir1">
+        <file name="readme.txt">Thank you for reading</file>
+        <file name="test.pdp"/>
+    </dir>
+    <dir name="stuff">
+        <file name="assignment.docx">i assign</file>
+        <dir name="project">
+            <file name="main.lua"/>
+            <file name="lib.so"/>
+            <dir name="res">
+            </dir>
+        </dir>
+        <file name="hobbies.pptx"/>
+    </dir>
+    <file name="VFSVERSION">XML</file>
+</rootdir>

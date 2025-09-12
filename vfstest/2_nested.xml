@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<rootdir>
+    <dir name="game">
+        <file name="main.cpp">#include "thegame.h"</file>
+        <dir name="resources">
+            <file name="actbusy.txt">goto node1</file>
+            <file name="vehiclescript.txt">#define transport.ent</file>
+            <dir name="sprites">
+                <dir name="monsters">
+                    <file name="headcrab.png">bGFtYXJyCg==</file>
+                </dir>
+                <file name="error.png">eW91YXJlbm90c3VwcG9zZWR0b3NlZXRoaXMK</file>
+            </dir>
+        </dir>
+    </dir>
+</rootdir>
