@@ -1,10 +1,9 @@
 # Конфигурационное управление: практическая работа 1
 ***Вариант №9***<br/>
-**Этап 3. VFS**
+**Этап 4. Основные команды**
 
 Программа `shell.py` представляет собой эмулятор для языка оболочки ОС, работа с которым напоминает работу в командной строке UNIX-подобной ОС.<br/>
-На данный момент разработан минимальный прототип. Большинство функций в нем пока
-представляют собой заглушки, но диалог с пользователем уже поддерживается. Так же есть возможность настройки эмулятора через параметры запуска, позволяющей выборать файл VFS (работа с которыми пока ещё в разработке) и выполнить определенный стартовый скрипт.<br/>
+Большинство основных функций из оболочки уже реализованы. Так же есть возможность настройки эмулятора через параметры запуска, позволяющей выбрать файл VFS и выполнить определенный стартовый скрипт.<br/>
 
 ## Функционал
 
@@ -14,20 +13,18 @@
 user@THISPC:~$
 ```
 
-- Реализованы команды-заглушки, которые выводят свое имя и аргументы: `ls`, `cd`.
+- Реализованы наиболее используемые команды и настоящей оболочки: `ls`, `cd`, `tree`, `cat`, `uptime`.
 ```
-user@THISPC:~$ cd abc def gh
-cd ['abc', 'def', 'gh']
-user@THISPC:~$ ls qwert
-ls ['qwert']
-user@THISPC:~$
+user@THISPC:~$ cd git
+user@THISPC:~/git$ ls
+kisscm
+user@THISPC:~/git$
 ```
 
 - Реализована поддержка кавычек для команд.
 ```
-user@THISPC:~$ cd "qwerty uiop" asdf hj
-cd ['qwerty uiop', 'asdf', 'hj']
-user@THISPC:~$
+user@THISPC:~$ cd "Programs and Files"
+user@THISPC:~/Programs and Files$
 ```
 
 - При некорректной расстановке кавычек парсер оповестит пользователя об ошибке.
@@ -54,14 +51,37 @@ ls kisscm
 $ python3 shell.py --vfs=/путь/до/vfs --script=/путь/до/стартового/скрипта
 ```
 
-- VFS полностью поддерживаются как и в двоичном виде, так и в формате XML (в последующих примерах отражена работа со стандартными файлами проекта defaultvfs.xml и defaultvfs.bin)
+- Если указан переключатель `-s`, то пользователь может переключать режим работы эмулятора между реальной файловой системой компьютера и VFS используя команду `switchfs`.
+```
+$ python3 shell.py -s --vfs=/путь/до/vfs
+...
+user@THISPC:/$ switchfs
+Shell is now working in ::real FS:: mode
+user@THISPC:~$ switchfs
+Shell is now working in ::VFS:: mode
+user@THISPC:/$
+```
+
+- VFS полностью поддерживаются как и в двоичном виде, так и в формате XML (в последующих примерах отражена работа со стандартными файлами проекта defaultvfs.xml и defaultvfs.bin, файл VFSVERSION прописан в самих файлах и используется только в целях демонстрации)
 ```
 $ python3 shell.py --vfs=defaultvfs.xml
-[VFS] Built: {'dir1': {'readme.txt': 'Thank you for reading', 'test.pdp': ''}, 'stuff': {'assignment.docx': 'i assign', 'project': {'main.lua': '', 'lib.so': '', 'res': {}}, 'hobbies.pptx': ''}, 'VFSVERSION': 'XML'}
+...
+
+[VFS] Built!
+
+user@THISPC:/$ cat VFSVERSION
+XML
+user@THISPC:/$
 ```
 ```
 $ python3 shell.py --vfs=defaultvfs.bin
-[VFS] Built: {'dir1': {'readme.txt': 'Thank you for reading', 'test.pdp': ''}, 'stuff': {'assignment.docx': 'i assign', 'project': {'main.lua': '', 'lib.so': '', 'res': {}}, 'hobbies.pptx': ''}, 'VFSVERSION': 'BINARY'}
+...
+
+[VFS] Built!
+
+user@THISPC:/$ cat VFSVERSION
+BINARY
+user@THISPC:/$
 ```
 
 ## Запуск
@@ -88,9 +108,11 @@ python3 shell.py
 
 В репозитории есть несколько скриптов для быстрого запуска или тестирования программы:
 
+- `start_cmdcheck.sh`: запускает эмулятор со стандартными файлом VFS (`defaultvfs.xml`) и скриптом `scripts/defcmdcheck`, который тестирует все реализованные на этом этапе команды, их режимы и обработку ошибок. 
+
 - `start_cwdscript.sh`: запускает эмулятор, который ищет стартовый скрипт `shellscript` в рабочем каталоге (для тестирования данной функции, запускаемых в стартовом скрипте, в корне репозитория располагается одноименный стартовый скрипт).
 
-- `start_default.sh`: запускает эмулятор со стандартными файлом VFS (`defaultvfs.xml`) и стартовым скриптом, в котором тестируются все режимы команд (`scripts/default`).
+- `start_default.sh`: запускает эмулятор со стандартными файлом VFS (`defaultvfs.xml`) и стартовым скриптом, в котором тестируются все режимы команд на предыдущих этапах (`scripts/default`). Данный скрипт устарел.
 
 - `start_shellemu.sh`: запускает эмулятор со скриптом `shellscript` и файлом VFS `vfs.xml` в директории `shellemu` пользователя (удобно для создания отдельных конфигураций эмулятора для каждого пользователя).
 
@@ -102,19 +124,28 @@ python3 shell.py
 
 ### Использование эмулятора
 
-- Использование команд-заглушек:
+- Для работы пользвателю предоставляется определенный набор комманд. Функционал команд максмиально схож с функционалом их оригиналов из реальной UNIX оболочки. На данный момент поддерживаются: `cd`, `ls`, `tree`, `cat`, `uptime`.
 ```
 user@THISPC:~$ cd Documents
-cd ['Documents']
-user@THISPC:~$
+user@THISPC:~/Documents$
 ```
 ```
 user@THISPC:~$ ls "Shared Files"
-ls ['Shared Files']
+shared_file1.txt
+shared_file2.docx
 user@THISPC:~$
 ```
 
-- Выход из эмулятора:
+- Чтобы переключаться между режимами работы между VFS и реальной файловой системой компьютера, используйте команду `switchfs`. Помните, что для её работы необходмо указать переключатель `-s` при запучке оболчки.
+```
+user@THISPC:/$ switchfs
+Shell is now working in ::real FS:: mode
+user@THISPC:~$ switchfs
+Shell is now working in ::VFS:: mode
+user@THISPC:/$
+```
+
+- Чтобы выйти из эмулятора, используйте команду `exit`.
 ```
 user@THISPC:~$ exit
 ```

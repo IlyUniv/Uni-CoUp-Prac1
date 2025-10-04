@@ -6,4 +6,7 @@
         <file name="file1">Yeah</file>
         dgfbf
     </dir>
+    <dir name="programs and files">
+        <file name="my file">This is a test of filenames with spaces</file>
+    </dir>
 </rootdir>

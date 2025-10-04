@@ -1,0 +1,39 @@
+tree
+cd dir1
+cat readme.txt ../VFSVERSION
+ls
+tree /stuff
+cd ..
+ls dir1 /stuff
+
+# error check
+ls /idontexist
+ls VFSVERSION
+cd /idontexist
+cd
+tree /idontexist
+cat /idontexist
+
+# real fs check
+switchfs
+
+cat README.md
+cat start_cmdcheck.sh start_default.sh
+tree
+cd scripts
+ls
+ls ../vfstest
+cd ..
+
+# real fs error check
+ls /idontexist
+ls README.md
+cd /idontexist
+cd
+tree /idontexist
+cat /idontexist
+
+switchfs
+
+tree
+uptime
