@@ -9,6 +9,7 @@ import psutil
 import math
 from xml.parsers import expat
 from base64 import b64decode
+from shutil import copyfile
 
 import traceback
 
@@ -19,6 +20,9 @@ class Shell:
 class FSElemDoesntExistException(Exception):
     def __init__(self):
         super().__init__()
+    
+    def __str__(self):
+        return "File doesn't exist"
 
 class FSElement:
     def __init__(self, name, is_directory, parent):
@@ -51,9 +55,15 @@ class VFS:
             raise FSElemDoesntExistException
         return elem.is_directory
     
-    def isDir(path: str):
-        elem = VFS.getByPath(path)
-        return VFS.isDirElem(elem)
+    def isDir(path: str, supress_exc = False):
+        try:
+            elem = VFS.getByPath(path)
+            return VFS.isDirElem(elem)
+        except Exception as e:
+            if not supress_exc:
+                raise e
+            else:
+                return False
     
     def getAbsPath(elem: FSElement):
         result = elem.name
@@ -108,6 +118,44 @@ class VFS:
         elem = VFS.getByPath(path) if path else VFS.cwd
         assert VFS.isDirElem(elem), Exception(path + " is not a directory")
         return list(elem.contents.keys())
+    
+    def exists(path):
+        return bool(VFS.getByPath(path))
+    
+    def _createdir(dirname, elem):
+        newdir = FSElement(dirname, True, elem)
+        elem[dirname] = newdir
+
+        return newdir
+
+    def _createfile(filename, elem):
+        newfile = FSElement(filename, False, elem)
+        elem[filename] = newfile
+
+        return newfile
+    
+    def _createfselement(path, creationfunc):
+        path = purifypath(path)
+
+        lastslashind = path.rfind("/")
+        dirname = path[lastslashind+1:]
+        if lastslashind == -1:
+            pathtodir = "."
+        else:
+            pathtodir = path[:path.rfind("/")]
+
+        elem = VFS.getByPath(pathtodir)
+        if not elem or not VFS.isDirElem(elem):
+            raise FSElemDoesntExistException
+        else:
+            return creationfunc(dirname, elem)
+    
+    def mkDir(path):
+        VFS._createfselement(path, VFS._createdir)
+    
+    def mkFile(path, contents):
+        newfile = VFS._createfselement(path, VFS._createfile)
+        newfile.contents = contents
 
 class VFSBuild:
     cur_dir: FSElement | None = None
@@ -235,6 +283,66 @@ class Command:
                     print(*f.readlines(), sep="")
             except Exception as e:
                 print("Error:", e)
+    
+    def _copyfile_realfs(src, dest):
+        print("COPY:", src, "to", dest)
+        copyfile(src, dest)
+    
+    def _copydirrecursive(src, dest, lsfunc, isdirfunc, mkdirfunc, copyfunc, pathexistsfunc):
+        cur_splitpath = splitpath(src)
+        add_spath = [cur_splitpath[-1]]
+
+        pref_fullpath = src
+        filelist = lsfunc(pref_fullpath)
+        for filename in filelist:
+            if isdirfunc(pref_fullpath + "/" + filename):
+                new_src = pref_fullpath + "/" + filename
+                new_dest = dest + "/" + filename
+                mkdirfunc(new_dest)
+                Command._copydirrecursive(new_src, new_dest, lsfunc, isdirfunc, mkdirfunc, copyfunc, pathexistsfunc)
+            else:
+                copyfunc(pref_fullpath + "/" + filename, dest + "/" + filename)
+    
+    def _copyuniversal(src, dest, is_recursive, lsfunc, isdirfunc, mkdirfunc, copyfunc, pathexistsfunc):
+        src = os.path.expanduser(purifypath(src))
+        dest = os.path.expanduser(purifypath(dest))
+
+        if not pathexistsfunc(src):
+            print("Error:", src, "doesn't exist")
+
+        if isdirfunc(src):
+            if not is_recursive:
+                print("Error:", src, "is a directory. Use '-r' flag")
+                return
+            else:
+                mkdirfunc(dest)
+                Command._copydirrecursive(src, dest, lsfunc, isdirfunc, mkdirfunc, copyfunc, pathexistsfunc)
+        else:
+            if isdirfunc(dest):
+                filename = src[src.rfind("/")+1:]
+                dest += "/" + filename
+            copyfunc(src, dest)
+
+    def _cp_realfs(args: list):
+        if len(args) < 2:
+            print("Error: not enough argumets")
+            return
+        
+        recursive = True
+
+        try:
+            args.pop(args.index("-r"))
+        except ValueError:
+            recursive = False
+
+        try:
+            Command._copyuniversal(args[0], args[1], recursive, os.listdir, os.path.isdir, os.mkdir, Command._copyfile_realfs, os.path.exists)
+        except Exception as e:
+            print("Error:", e)
+    
+    #def _translatepermstr()
+    
+    #def _chmod_realfs():
 
 
     def _cd_vfs(args):
@@ -265,6 +373,27 @@ class Command:
             except Exception as e:
                 print("Error:", e)
     
+    def _copyfile_vfs(src, dest):
+        print("VFS COPY:", src, "to", dest)
+        contents = VFS.getByPath(src).contents
+        VFS.mkFile(dest, contents)
+    
+    def _cp_vfs(args: list):
+        if len(args) < 2:
+            print("Error: not enough argumets")
+            return
+        
+        recursive = True
+
+        try:
+            args.pop(args.index("-r"))
+        except ValueError:
+            recursive = False
+
+        try:
+            Command._copyuniversal(args[0], args[1], recursive, VFS.listDir, VFS.isDir, VFS.mkDir, Command._copyfile_vfs, VFS.exists)
+        except Exception:
+            pass
 
     def _uptime(args):
         loctime = time.localtime()
@@ -277,6 +406,7 @@ class Command:
     _cmd_tbl["ls"] = _ls_realfs
     _cmd_tbl["tree"] = _tree_realfs
     _cmd_tbl["cat"] = _cat_realfs
+    _cmd_tbl["cp"] = _cp_realfs
 
     _cmd_tbl["uptime"] = _uptime
     
@@ -291,11 +421,13 @@ class Command:
             Command._cmd_tbl["ls"] = Command._ls_vfs
             Command._cmd_tbl["tree"] = Command._tree_vfs
             Command._cmd_tbl["cat"] = Command._cat_vfs
+            Command._cmd_tbl["cp"] = Command._cp_vfs
         else:
             Command._cmd_tbl["cd"] = Command._cd_realfs
             Command._cmd_tbl["ls"] = Command._ls_realfs
             Command._cmd_tbl["tree"] = Command._tree_realfs
             Command._cmd_tbl["cat"] = Command._cat_realfs
+            Command._cmd_tbl["cp"] = Command._cp_realfs
 
         Command._using_vfs = using_vfs
     
@@ -319,6 +451,30 @@ def secondstohms(sec):
     m = m - h * 60
 
     return f"{h:02}:{m:02}:{sec:02}"
+
+def purifypath(path: str):
+    if not path: return ""
+
+    is_start_at_root = path[0] == "/"
+    lspath = path.split("/")
+    count = 0
+
+    while count < len(lspath):
+        if not lspath[count]:
+            lspath.pop(count)
+        else:
+            count += 1
+    
+    result = "/".join(lspath)
+    return ("/" if is_start_at_root else "") + result
+
+def splitpath(path: str):
+    lspath = path.split("/")
+    if not lspath[0]:
+        lspath.pop(0)
+        lspath[0] = "/" + lspath[0]
+    
+    return lspath
 
 def getexpanduserstr(path: str):
     return path.replace(os.path.expanduser("~"), "~")
